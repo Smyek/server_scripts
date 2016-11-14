@@ -37,11 +37,11 @@ class FTP:
 
     def download(self, filepath, localpath):
         self.sftp.get(filepath, localpath)
-        print("File successfully downloaded")
+        #print("File successfully downloaded")
 
     def upload(self, localpath, filepath):
         self.sftp.put(localpath, filepath)
-        print("File successfully uploaded")
+        #print("File successfully uploaded")
 
 
 if __name__ == "__main__":
