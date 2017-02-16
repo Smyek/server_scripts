@@ -1,6 +1,7 @@
 from ftpmanager import FTP
 from random import randint
 from os import listdir
+import os
 import webbrowser
 
 class SICUploader:
@@ -41,13 +42,12 @@ class SICUploader:
             print("Wrong confirmation code!..")
             return False
         print("Uploading release...")
-        self.upload_script(False)
+        self.upload_script(is_test=False)
         self.ftp.upload("data/release_config.csv", self._serverpath + "data/config.csv")
 
     ##pre_process
     def upload_script(self, is_test=True):
-        datafiles = ["data/" + f for f in listdir(self._sourcepath + "data/")]
-        filelist = ["generation.py"] + datafiles
+        filelist = ["generation.py", "testmodule.py", "utils.py"] + self.dir_files(is_test)
         path = self._serverTESTpath if is_test else self._serverpath
         if is_test:
             self.ssh_make_beta_folders()
@@ -55,7 +55,18 @@ class SICUploader:
         print("uploading to " + path)
         for proj_file in filelist:
             print(self._sourcepath + proj_file, " >>> " , path + proj_file)
+            # if os.path.isdir(self._sourcepath + proj_file):
+            #     self.ssh_run_command("mkdir %s%s" % (self._serverpath, proj_file))
             self.ftp.upload(self._sourcepath + proj_file, path + proj_file)
+
+    def dir_files(self, is_test):
+        result_paths = []
+        directories = ["data/", "service/"]
+        if is_test: directories.append("data/userdata/")
+        for directory in directories:
+            directory_paths = [f for f in listdir(self._sourcepath + directory) if not os.path.isdir(self._sourcepath + directory + f)]
+            result_paths += [directory + f for f in directory_paths]
+        return result_paths
 
     def ensure_test_config(self):
         with open(self._sourcepath + "data/config.csv", "w", encoding="utf-8") as f:
@@ -72,12 +83,13 @@ class SICUploader:
 
     ##ssh
     def ssh_make_beta_folders(self):
-        folders = ["test", "test/data"]
+        folders = ["test", "test/data", "test/data/userdata", "test/service"]
         for folder in folders:
             self.ssh_run_command("mkdir %s%s" % (self._serverpath, folder))
 
     def ssh_run_beta(self):
         command = "cd %s && python2.7 generation.py" % (self._serverTESTpath)
+        print(command)
         self.ssh_run_command(command)
 
     def ssh_clear_beta(self):
